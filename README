@@ -3,7 +3,7 @@ This program is based on ioquake3. For build instructions and more, see IOQ3-REA
 
 
     changes to get WOP to build and run on mac osx 10.10 with SDL2.
-    the release binaries seem to use a deprecated osx API and thus would not run
+    the released binaries seem to use a deprecated osx API and thus would not run
     (crash on startup).
     so, I updated to use SDL2.
     Also updated to use libraries installed from the macports project
@@ -18,9 +18,24 @@ This program is based on ioquake3. For build instructions and more, see IOQ3-REA
     ogg
     pkgconfig
 
+    generated binaries are
+
+    build/release-darwin-x86_64/wopded.x86_64
+    build/release-darwin-x86_64/wop.x86_64
+    build/release-darwin-x86_64/renderer_opengl1_x86_64.dylib
+
+    install version 1.5 from here
+    https://sourceforge.net/projects/worldofpadman/files/wop-1.5.1-full.dmg/download
+    then overlay files from here to update to version 1.6
+    https://sourceforge.net/projects/worldofpadman/files/wop-1.5.x-to-1.6-patch-unified.zip/download
+    then move generated binaries to
+     /Applications/World_of_Padman/wop.app/Contents/MacOS/
+     rename wop.x86_64 to wop-engine.ub
+     rename wopded.x86_64 to wopded.ub
+
     TODO: 
     - find why vm compiler crashes (at least for osx x86_64)
-      workaround: disable compiler, just use the interpreter
+      workaround: disable compiler in Makefile, just use the interpreter
     - why conflict with included jpeg lib version
       workaround: disabled using internal jpeg
     - find why a sound buffer is periodically NULL, causing game crash
