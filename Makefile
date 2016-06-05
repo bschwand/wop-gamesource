@@ -14,7 +14,7 @@ ifeq ($(COMPILE_PLATFORM),sunos)
 endif
 ifeq ($(COMPILE_PLATFORM),darwin)
   # Apple does some things a little differently...
-  COMPILE_ARCH=$(shell uname -p | sed -e s/i.86/i386/)
+  COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/)
 endif
 
 ifeq ($(COMPILE_PLATFORM),mingw32)
@@ -165,7 +165,7 @@ USE_INTERNAL_ZLIB=1
 endif
 
 ifndef USE_INTERNAL_JPEG
-USE_INTERNAL_JPEG=1
+USE_INTERNAL_JPEG=0
 endif
 
 ifndef USE_LOCAL_HEADERS
@@ -211,7 +211,7 @@ Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 LOKISETUPDIR=misc/setup
 NSISDIR=misc/nsis
-SDLHDIR=$(MOUNT_DIR)/SDL12
+SDLHDIR=$(MOUNT_DIR)/SDL2
 LIBSDIR=$(MOUNT_DIR)/libs
 
 bin_path=$(shell which $(1) 2> /dev/null)
@@ -225,14 +225,14 @@ ifneq ($(BUILD_CLIENT),0)
     CURL_LIBS=$(shell pkg-config --silence-errors --libs libcurl)
     OPENAL_CFLAGS=$(shell pkg-config --silence-errors --cflags openal)
     OPENAL_LIBS=$(shell pkg-config --silence-errors --libs openal)
-    SDL_CFLAGS=$(shell pkg-config --silence-errors --cflags sdl|sed 's/-Dmain=SDL_main//')
-    SDL_LIBS=$(shell pkg-config --silence-errors --libs sdl)
+    SDL_CFLAGS=$(shell pkg-config --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
+    SDL_LIBS=$(shell pkg-config --silence-errors --libs sdl2)
   endif
   # Use sdl-config if all else fails
   ifeq ($(SDL_CFLAGS),)
-    ifneq ($(call bin_path, sdl-config),)
-      SDL_CFLAGS=$(shell sdl-config --cflags)
-      SDL_LIBS=$(shell sdl-config --libs)
+    ifneq ($(call bin_path, sdl2-config),)
+      SDL_CFLAGS=$(shell sdl2-config --cflags)
+      SDL_LIBS=$(shell sdl2-config --libs)
     endif
   endif
 endif
@@ -394,7 +394,7 @@ else # ifeq Linux
 #############################################################################
 
 ifeq ($(PLATFORM),darwin)
-  HAVE_VM_COMPILED=true
+  HAVE_VM_COMPILED=false
   LIBS = -framework Cocoa
   CLIENT_LIBS=
   OPTIMIZEVM=
@@ -412,7 +412,11 @@ ifeq ($(PLATFORM),darwin)
     OPTIMIZEVM += -march=prescott -mfpmath=sse
     # x86 vm will crash without -mstackrealign since MMX instructions will be
     # used no matter what and they corrupt the frame pointer in VM calls
-    BASE_CFLAGS += -mstackrealign
+    BASE_CFLAGS += -arch i386 -m32 -mstackrealign
+  endif
+
+  ifeq ($(ARCH),x86_64)
+    OPTIMIZEVM += -arch x86_64 -mfpmath=sse
   endif
 
   BASE_CFLAGS += -fno-strict-aliasing -DMACOS_X -fno-common -pipe
@@ -430,12 +434,15 @@ ifeq ($(PLATFORM),darwin)
   endif
 
   ifeq ($(USE_CODEC_VORBIS),1)
-    CLIENT_LIBS += -lvorbisfile -lvorbis -logg
+    BASE_CFLAGS += $(shell pkg-config --silence-errors --cflags vorbis)
+    CLIENT_LIBS += $(shell pkg-config --silence-errors --libs vorbis)
+    BASE_CFLAGS += $(shell pkg-config --silence-errors --cflags vorbisfile)
+    CLIENT_LIBS += $(shell pkg-config --silence-errors --libs vorbisfile)
   endif
   
    ifeq ($(USE_CIN_THEORA),1)
-    BASE_CFLAGS += -DUSE_CIN_THEORA
-    CLIENT_LDFLAGS += -ltheora
+    BASE_CFLAGS += $(shell pkg-config --silence-errors --cflags theora) -DUSE_CIN_THEORA
+    CLIENT_LIBS += $(shell pkg-config --silence-errors --libs theora)
   endif
   
   ifeq ($(USE_CODEC_MP3),1)
@@ -451,12 +458,26 @@ ifeq ($(PLATFORM),darwin)
 
   # We copy sdlmain before ranlib'ing it so that subversion doesn't think
   #  the file has been modified by each build.
-  LIBSDLMAIN=$(B)/libSDLmain.a
-  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDLmain.a
-  CLIENT_LIBS += -framework IOKit -framework OpenGL \
-    $(LIBSDIR)/macosx/libSDL-1.2.0.dylib
+  #LIBSDLMAIN=$(B)/libSDL2main.a
+  #LIBSDLMAINSRC=$(LIBSDIR)/libSDL2main.a
+  CLIENT_LIBS += -framework IOKit -framework OpenGL -lSDL2main $(SDL_LIBS)
 
-  OPTIMIZEVM += -falign-loops=16
+  CLIENT_CFLAGS += $(SDL_CFLAGS)
+
+  RENDERER_LIBS = $(SDL_LIBS) -framework OpenGL
+
+
+ifeq ($(USE_INTERNAL_JPEG),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_JPEG
+  BASE_CFLAGS += -I$(JPDIR)
+else
+  RENDERER_LIBS += -ljpeg
+endif
+
+#\
+#    $(LIBSDIR)/macosx/libSDL-2.0.0.dylib
+
+  #OPTIMIZEVM += -falign-loops=16
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   SHLIBEXT=dylib

@@ -64,9 +64,9 @@ void qsnapvectorsse(vec3_t vec)
 
 #define QROUNDX87(src) \
 	"flds " src "\n" \
-	"fistp " src "\n" \
-	"fild " src "\n" \
-	"fstp " src "\n"	
+	"fistpl " src "\n" \
+	"fildl " src "\n" \
+	"fstps " src "\n"	
 
 void qsnapvectorx87(vec3_t vec)
 {

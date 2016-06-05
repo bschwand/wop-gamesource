@@ -1,1 +1,27 @@
 This program is based on ioquake3. For build instructions and more, see IOQ3-README.
+
+
+
+    changes to get WOP to build and run on mac osx 10.10 with SDL2.
+    the release binaries seem to use a deprecated osx API and thus would not run
+    (crash on startup).
+    so, I updated to use SDL2.
+    Also updated to use libraries installed from the macports project
+    to build, first install macports, then the following libs with 
+    sudo port install <portname>
+
+    jpeg9
+    SDL2
+    libtheora
+    vorbis
+    vorbisfile
+    ogg
+    pkgconfig
+
+    TODO: 
+    - find why vm compiler crashes (at least for osx x86_64)
+      workaround: disable compiler, just use the interpreter
+    - why conflict with included jpeg lib version
+      workaround: disabled using internal jpeg
+    - find why a sound buffer is periodically NULL, causing game crash
+      workaround: check valid sound buffer, skip if not
